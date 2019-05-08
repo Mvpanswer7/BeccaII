@@ -1,0 +1,173 @@
+# For a quick start check out our HTTP Requests collection (Tools|HTTP Client|Open HTTP Requests Collection).
+#
+# Following HTTP Request Live Templates are available:
+# * 'gtrp' and 'gtr' create a GET request with or without query parameters;
+# * 'ptr' and 'ptrp' create a POST request with a simple or parameter-like body;
+# * 'mptr' and 'fptr' create a POST request to submit a form with a text or file field (multipart/form-data);
+
+### 测试写本地文件，本地checkpoint
+POST http://localhost:8124/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\";  load kafka.`hive_test` options `kafka.bootstrap.servers`=\"192.168.48.193:9092\" and subscribe = \"hive_test\" as test_hive; select * from test_hive as table1; save  table1 as json.`C:\\Users\\yangyixin\\Desktop\\test\\ss_test\\test_hive` options mode=\"append\"  and duration=\"10\" and checkpointLocation=\"C:\\Users\\yangyixin\\Desktop\\test\\ss_test\\checkpoint\" and `failOnDataLoss`=\"false\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+### 测试写kafka，本地checkpoint
+POST http://localhost:8124/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\"; connect kafka where `kafka.bootstrap.servers`=\"192.168.48.193:9092\" as kafka_db1; load kafka.`kafka_db1` options `kafkaConsumer.pollTimeoutMs`=\"10000\" and `subscribe`=\"hive_test\" as hive_test; save hive_test as kafka.`kafka_db1` options `topic`=\"ss_test\" and `mode`=\"append\" and `duration`=\"10\" and `checkpointLocation`=\"C:\\Users\\yangyixin\\Desktop\\test\\ss_test\\checkpoint\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "",
+	"callback": "http://192.168.12.102:9009/test"
+}
+###
+
+### 测试写ES，本地调试
+POST http://localhost:8124/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\"; connect kafka where `kafka.bootstrap.servers`=\"192.168.48.193:9092\" as kafka_db1; connect es where `es.nodes`=\"192.168.200.152\" and `es.port`=\"9200\" and `es.net.http.auth.user`=\"englog_y\" and `es.net.http.auth.pass`=\"englog_y\" as es_db1;   load kafka.`kafka_db1` options `kafkaConsumer.pollTimeoutMs`=\"10000\" and `subscribe`=\"hive_test\" as hive_test; save hive_test as es.`es_db1.ss_test/info` options `es.batch.write.refresh`=\"true\" and `es.write.operation`=\"index\" and  `mode`=\"append\" and `duration`=\"10\" and `checkpointLocation`=\"C:\\Users\\yangyixin\\Desktop\\test\\ss_test\\checkpoint\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+###
+
+### 测试写ES
+POST http://192.168.12.102:8125/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\"; connect es where `es.nodes`=\"192.168.48.113\" and `es.port`=\"9200\" and `es.net.http.auth.user`=\"elastic\" and `es.net.http.auth.pass`=\"changeme\" as db1;  load kafka.`hive_test` options `kafka.bootstrap.servers`=\"192.168.8.151:9092\" and subscribe = \"hive_test\" as test_hive; select * from test_hive as table1; save overwrite  table1 as es.`db1.ss_test/info` options mode=\"append\"  and duration=\"10\" and checkpointLocation=\"C:\\Users\\yangyixin\\Desktop\\test\\ss_test\\checkpoint\" and `failOnDataLoss`=\"false\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+### 测试写hdfs以json格式
+POST http://192.168.12.102:8125/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\";   load kafka.`hive_test` options `kafka.bootstrap.servers`=\"192.168.8.151:9092\" and subscribe = \"hive_test\" as test_hive; select * from test_hive as table1; save append  table1 as json.`data/json_test` options fileNum=\"10\" and mode=\"append\"  and duration=\"10\" and checkpointLocation=\"ss_test/checkpoint/json_test\" and `failOnDataLoss`=\"false\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "/user/spark2/ss_test",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+### 批查hdfs json格式数据
+POST http://192.168.12.102:8125/api/query/sql
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"select * from json.`/user/spark2/ss_test/data/json_test` limit 10",
+"async":"false",
+"jobName":"orc_test_1",
+"timeout":-1
+}
+
+### 测试写hdfs以orc格式
+POST http://192.168.12.102:8125/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\";  load kafka.`hive_test` options `kafkaConsumer.pollTimeoutMs`=\"10000\" and  `kafka.bootstrap.servers`=\"192.168.48.193:9092\" and subscribe = \"hive_test\" as test_hive; select CAST(value AS STRING) as json from test_hive as table1; select json_tuple(json, 'ip_info', 'permanent_city', 'system', 'phone_brand', 'permanent_country', 'device', 'system_build', 'imei', 'system_version', 'id', 'related_app', 'permanent_province') from table1 as table2; select c0 as ip_info, c1 as permanent_city, c2 as system, c3 as phone_brand, c4 as permanent_country, c5 as device, c6 as system_build, c7 as imei, c8 as system_version, c9 as id, c10 as related_app, c11 as permanent_province  from table2 as table3;  save append  table3 as json.`data/json_test` options mode=\"append\"  and duration=\"10\" and checkpointLocation=\"checkpoint/json_test\" and `failOnDataLoss`=\"false\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "/user/spark2/ss_test",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+### 批查hdfs orc格式数据
+POST http://192.168.12.102:8125/api/query/sql
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"select * from orc.`/user/spark2/ss_test/data/orc_test` limit 10",
+"async":"false",
+"jobName":"orc_test_1",
+"timeout":-1
+}
+
+### 测试写hive表
+POST http://192.168.12.102:8125/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "set streamName=\"streamExample\";   load kafka.`hive_test` options `kafka.bootstrap.servers`=\"192.168.8.151:9092\" and subscribe = \"hive_test\" as test_hive; select * from test_hive as table1; save   table1 as hive.`hive_test` options  mode=\"append\"  and duration=\"10\" and checkpointLocation=\"checkpoint/orc_test\" and `failOnDataLoss`=\"false\";",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "test",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "/user/spark2/ss_test",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+
+
+### 测试写jdbc
+POST http://localhost:8124/api/query/xql
+Content-Type: application/json
+
+{
+	"owner": "spark2",
+	"sql": "",
+	"async": "true",
+	"jobName": "sstest",
+	"groupId": "sstest",
+	"timeout": -1,
+	"allPathPrefix": "{}",
+	"pool":"default",
+	"defaultPathPrefix": "",
+	"callback": "http://192.168.12.102:9009/test"
+}
+
+###

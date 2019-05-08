@@ -1,0 +1,287 @@
+### connection server
+GET http://127.0.0.1:8124/api/test
+Content-Type: text/html(UTF-8)
+
+### csv文件读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load csv.`jctest` as t1 options header=\"true\" and delimiter=\" \";select * from t1 as t2; save overwrite t2 as csv.`jctest2` options header=\"true\" and delimiter=\",\" and fileNum=\"50\";",
+"async":"true",
+"jobName":"csv_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/Users/jinchen/app/insight-xmatrix/spark-warehouse",
+"callback":"http://127.0.0.1:8124/api/test"
+}
+
+### json 文件读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load json.`jctest3` as t1;select * from t1 as t2; save overwrite t2 as json.`jctest4` options fileNum=\"50\";",
+"async":"true",
+"jobName":"json_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2/",
+"callback":"http://127.0.0.1:8124/api/test"
+}
+
+### parquet 文件读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load parquet.`manager/xql/jctest5` as t1;select * from t1 as t2; save overwrite t2 as parquet.`manager/xql/jctest6` options fileNum=\"50\";",
+"async":"true",
+"jobName":"parquet_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2/",
+"callback":"http://192.168.12.102:9009/test"
+}
+
+### orc 文件读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load orc.`manager/xql/jctest7` as t1;select * from t1 as t2; save overwrite t2 as orc.`manager/xql/jctest8` options fileNum=\"50\";",
+"async":"true",
+"jobName":"orc_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2/",
+"callback":"http://192.168.12.102:9009/test"
+}
+
+###jdbc 读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"connect jdbc where url=\"jdbc:mysql://192.168.8.16:4000/insight_sources?characterEncoding=utf8&rewriteBatchedStatements=true\" and user=\"insight-write\" and password=\"123\" and partitionColumn=\"id\" and lowerBound=\"1\" and upperBound=\"1\" and numPartitions=\"10\" as db1;load jdbc.`db1.xmatrix_test` as t1;save overwrite t1 as jdbc.`db1.xmatrix_test2` options fileNum=\"20\";",
+"async":"true",
+"jobName":"jdbc_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2/",
+"callback":"http://192.168.12.102:9009/test"
+}
+
+###jdbc upsert写入测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"connect jdbc where url=\"jdbc:mysql://192.168.8.16:4000/insight_sources?characterEncoding=utf8&rewriteBatchedStatements=true\" and user=\"insight-write\" and password=\"123\" as db1;load csv.`manager/xql/jctest` as t1 options header=\"true\" and delimiter=\" \";save append t1 as jdbc.`db1.xmatrix_test_upsert` options idCol=\"name\" and createTableColumnTypes=\"name string\" fileNum=\"20\";",
+"async":"true",
+"jobName":"jdbc_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2/",
+"callback":"http://192.168.12.102:9009/test"
+}
+
+### hive create建分区表和save hive表 测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"set hive.exec.dynamic.partition.mode=nonstrict options type=\"conf\";load csv.`manager/xql/jctest` options header=\"true\" and delimiter=\" \" as t1;create table if not exists xmatrix_test_hive3( name string, name_cn string, des string) partitioned by (id string);insert into xmatrix_test_hive3 partition(id) select table_id as id, table_name as name, name_cn, description as des from t1;save t1 as hive.`xmatrix_test_hive4`;",
+"async":"true",
+"jobName":"json_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2",
+"callback":"http://192.168.12.102:9009/test",
+"group":"insight",
+"id":"tidb_test"
+}
+
+### tidb 读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"connect tidb where path = \"insight_sources\" as tidb1;load tidb.`tidb1.xmatrix_test` as t1;connect jdbc where url=\"jdbc:mysql://192.168.8.16:4000/insight_sources?characterEncoding=utf8&rewriteBatchedStatements=true\" and user=\"insight-write\" and password=\"123\" as db1;save overwrite t1 as jdbc.`db1.xmatrix_test2` options fileNum=\"20\";",
+"async":"true",
+"jobName":"json_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2",
+"callback":"http://192.168.12.102:9009/test",
+"group":"insight",
+"id":"tidb_test"
+}
+
+### es读取和写入测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"connect es where `es.nodes`=\"192.168.48.113\" and `es.port`=\"9200\" and `es.net.http.auth.user`=\"elastic\" and `es.net.http.auth.pass`=\"changeme\" as db1;load es.`db1.es_test/info` as t2; save overwrite t2 as es.`db1.xmatrix_test_es1/info`;",
+"async":"true",
+"jobName":"json_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2",
+"callback":"http://192.168.12.102:9009/test",
+"group":"insight",
+"id":"tidb_test"
+}
+
+### hbase读取测试，写入暂不支持
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load hbase.`hbase-user-label-test` options rowkey=\"id_imei\"and zk=\"192.168.12.227:2181\"and inputTableName=\"hbase-user-label-test\"and `field.type.info`=\"string\" as t1 ; save overwrite t1 as json.`manager/xql/xmatrix_test_hbase`",
+"async":"true",
+"jobName":"json_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"/user/spark2",
+"callback":"http://192.168.12.102:9009/test",
+"group":"insight",
+"id":"tidb_test"
+}
+
+### ss 测试
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:8124
+Content-Type: application/json
+
+{
+
+ "owner":"spark2",
+ "sql":"set streamName=\"streamExample\"; load kafka.`hive_test` options `kafka.bootstrap.servers`=\"192.168.8.151:9092\" and subscribe = \"hive_test\" as newkafkatable1; select * from newkafkatable1 as table21; save table21 as json.`jctest3` options mode=\"append\" and duration=\"10\" and checkpointLocation=\"jctest4\" and `failOnDataLoss`=\"false\";",
+ "async":"true",
+ "jobName":"jctest",
+ "timeout":100,
+ "allPathPrefix":"{}",
+ "defaultPathPrefix":"",
+ "callback":"http://192.168.12.102:9009/test"
+}
+
+### set 测试
+POST /api/query/xql HTTP/1.1
+Host: localhost:8124
+Content-Type: application/json
+
+{
+
+ "owner":"spark2",
+ "sql":"set date=`date -d yesterday +%Y/%m/%d` options type=\"shell\"; load json.`file:///home/work/data/dataset/${date}` as log_file; select * from log_file limit 10 as test;",
+ "async":"false",
+ "jobName":"zyd",
+ "timeout":1,
+ "allPathPrefix":"{}",
+ "defaultPathPrefix":"",
+ "callback":"http://192.168.12.102:9009/test"
+}
+
+
+
+### 语法检测测试
+POST /api/query/check HTTP/1.1
+Host: localhost:8124
+Content-Type: application/json
+
+{
+    "sql": "connect es where `es.nodes`=\"192.168.48.113\" and `es.port`=\"9200\" and `es.net.http.auth.user`=\"elastic\" and `es.net.http.auth.pass`=\"changeme\" as db1; load es.`db1.es_test/info` as t2; select * from t2  wher as t3; save overwrite t2 as es.`db1.xmatrix_test_es1/info`;"
+}
+
+
+
+### carbondata 文件读取和写入测试
+### carbondata create table
+POST /api/query/sql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+//    "sql": "SHOW SEGMENTS FOR TABLE carbon_t1",
+    "sql": "select * from carbon_t1",
+    "async": "false",
+    "owner": "zyd",
+    "jobName": "first",
+    "timeout": 100
+}
+
+###
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load csv.`file:///home/work/app/gitavlyun/insight-xmatrix/src/main/resources/datasets/data2.csv` options header=\"true\" and delimiter=\",\" as t1; select * from t1 as t2; save overwrite t2 as carbondata.`carbon_t1`;"	,
+"async":"true",
+"groupId": "xxx",
+"jobName":"zyd_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":""
+}
+
+###
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"select * from carbon_t1 as t2; save overwrite t2 as json.`file:///home/work/data/test/carbon_f_t1`;"	,
+"async":"true",
+"groupId": "xxx",
+"jobName":"zyd_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":""
+}
+
+###
+POST /api/query/xql HTTP/1.1
+Host: 192.168.12.102:10284
+Content-Type: application/json
+
+{
+"owner":"spark2",
+"sql":"load csv.`/user/spark2/carbon_test.csv` options header=\"true\" and delimiter=\",\" as t1; select * from t1 as t2; save overwrite t2 as carbondata.`carbon_zyd_t0`;"	,
+"async":"true",
+"groupId": "xxxxxxxxxxxx",
+"jobName":"zyd_test",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":"",
+"pool": "default",
+"callback": "hello.world"
+}
+
+###
+
+

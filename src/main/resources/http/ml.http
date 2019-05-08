@@ -1,0 +1,32 @@
+### sklearn iris model
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"xmatrix",
+"sql":"load csv.`file:///home/work/app/gitavlyun/insight-ml/datasets/iris.csv` options header=\"true\" and delimiter=\",\" as t1; register SKLearn.`file:///home/work/app/gitavlyun/insight-ml/models/sklearn_model_iris.pickle` as predict options nonMLSQLModel=\"true\" and pythonPath=\"/home/work/miniconda3/envs/xmatrix/bin/python\" and pythonVer=\"3.6\";select mkString(',',vec_array(predict( vec_dense(array_string_to_double(array(`150`, `4`, setosa, versicolor)))))) as p from t1 as t2; save overwrite t2 as csv.`file:///home/work/data/test/iris_csv0`;",
+"async":"false",
+"jobName":"ml-sklearn",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":""
+}
+
+###
+### sklearn iris model
+POST /api/query/xql HTTP/1.1
+Host: 127.0.0.1:8124
+Content-Type: application/json
+
+{
+"owner":"xmatrix",
+"sql":"load csv.`file:///home/work/app/gitavlyun/insight-ml/datasets` options header=\"true\" and delimiter=\",\" as t1; select vec_dense(array_string_to_double(array(`150`, `4`, setosa, versicolor))) as a from t1 as t2;",
+"async":"false",
+"jobName":"ml-sklearn",
+"timeout":-1,
+"allPathPrefix":"{}",
+"defaultPathPrefix":""
+}
+
+###
